@@ -84,11 +84,6 @@ const processWithGemini = async (fileBuffer: string) => {
 }
 
 const processWithAnthropic = async (fileBuffer: string) => {
-    // console.log(fileBuffer)
-    // console.log("Processing PDF with Anthropic... : ", fileBuffer);
-    // if(1<2) throw new Error('found')
-    // Claude 3.5 Sonnet and newer models support direct PDF input.
-    const CLAUDE_MODEL = "claude-3-5-sonnet-20241022";
     try {
         if (!fileBuffer) {
             return "No PDF base64 string provided.";
@@ -124,7 +119,6 @@ const processWithAnthropic = async (fileBuffer: string) => {
             ],
             system: prompt,
         });
-        console.log('Claude response: ', message)
         return message.content;
     } catch (error: any) {
         console.error(`Error processing PDF from base64 with Anthropic API: ${error.message}`);
@@ -142,14 +136,41 @@ export async function POST(request: Request) {
     try {
         const { fileBuffer } = await request.json();
         const extractedData = await processWithGemini(fileBuffer);
-        console.log('Parsed Gemini:', extractedData)
         const anthropicData: any = await processWithAnthropic(fileBuffer);
+        console.log('Anthropic data:', anthropicData)
         let parsed = []
         if (Array.isArray(anthropicData)) {
             const parsedAnthropic = anthropicParses(anthropicData[0]['text'])
-            console.log('Parsed Anthropic:', parsedAnthropic)
+            parsed = parsedAnthropic || []
         }
-        return NextResponse.json({ status: 'success', data: { gemini: extractedData, anthropic: anthropicData } });
+        // Do comparison of both response 
+        let compared = false;
+        compared = parsed.length == extractedData.transactions.length;
+        if (compared) {
+            for (let i = 0; i < parsed.length; i++) {
+                if (parsed[i].date !== extractedData.transactions[i].date) {
+                    compared = false;
+                    break;
+                }
+                if (parsed[i].description !== extractedData.transactions[i].description) {
+                    compared = false;
+                    break;
+                }
+                if (parsed[i].amount !== extractedData.transactions[i].amount) {
+                    compared = false;
+                    break;
+                }
+                if (parsed[i].type !== extractedData.transactions[i].type) {
+                    compared = false;
+                    break;
+                }
+                if (parsed[i].balance !== extractedData.transactions[i].balance) {
+                    compared = false;
+                    break;
+                }
+            }
+        }
+        return NextResponse.json({ status: 'success', data: { gemini: extractedData, anthropic: parsed, compared } });
     } catch (error) {
         console.error('Error processing document:', error);
         return NextResponse.json({ error: 'Failed to process document' }, { status: 500 });
