@@ -50,21 +50,26 @@ export default function DocumentUploader({ userId }: { userId: string }) {
             reader.onload = async e => {
                 const dataUri = e.target?.result as string;
                 // await uploadPdfToR2(dataUri, userId, file.name);
-                await fetch('/api/parser/process', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        fileUrl: 'publicUrl',
-                        fileName: file.name,
-                        fileType: file.type,
-                        fileBuffer: dataUri,
-                    }),
-                });
-
-                setIsUploading(false);
-                router.refresh();
+                try {
+                    const responseData = await fetch('/api/parser/process', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            fileUrl: 'publicUrl',
+                            fileName: file.name,
+                            fileType: file.type,
+                            fileBuffer: dataUri,
+                        }),
+                    });
+                    setIsUploading(false);
+                    console.log('Response data : ', responseData);
+                    router.refresh();
+                } catch (error) {
+                    console.log('Error uploading file:', error);
+                    alert('Error uploading file. Please try again.');
+                }
             };
             reader.readAsDataURL(file);
         } catch (error) {
@@ -146,7 +151,7 @@ export default function DocumentUploader({ userId }: { userId: string }) {
                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                     />
                 </svg>
-                <div className="mt-4 flex text-sm text-gray-600">
+                <div className="mt-4 flex text-sm text-gray-600 justify-center items-center">
                     <label
                         htmlFor="file-upload"
                         className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">

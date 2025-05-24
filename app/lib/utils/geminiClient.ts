@@ -1,7 +1,7 @@
-// utils/geminiClient.js
-import { GoogleGenAI } from '@google/genai';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
-export default genAI;
+export const ai = genkit({
+    plugins: [googleAI({ 'apiKey': process.env.GEMINI_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+});
